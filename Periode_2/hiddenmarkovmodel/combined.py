@@ -7,24 +7,26 @@ from math import exp, log
 from hmmlearn.hmm import CategoricalHMM
 
 # ------------------------------
-# Part 1: Model Setup and Sampling
+# Modelparameters instellen
 # ------------------------------
 
-# Maak een model met 3 toestanden en 4 emissies (bijvoorbeeld kleuren van knikkers)
-model = HMM(n_components=3, n_features=4)
-
-# Stel de begintoestanden, overgangswaarschijnlijkheden en emissiekansen in
 startprob = np.array([0.3, 0.4, 0.3])
 transmat = np.array([[0.5, 0.2, 0.3],
                      [0.3, 0.4, 0.3],
                      [0.2, 0.3, 0.5]])
-emissionprob = np.array([[0.1, 0.4, 0.4, 0.1],  # Emissie kansen voor toestand 0
-                         [0.3, 0.3, 0.2, 0.2],  # Emissie kansen voor toestand 1
-                         [0.2, 0.3, 0.3, 0.2]])  # Emissie kansen voor toestand 2
+emissionprob = np.array([[0.1, 0.4, 0.4, 0.1],
+                         [0.3, 0.3, 0.2, 0.2],
+                         [0.2, 0.3, 0.3, 0.2]])
 
+# Maak HMM-model
+model = HMM(n_components=3, n_features=4)
 model.startprob_ = startprob
 model.transmat_ = transmat
 model.emissionprob_ = emissionprob
+
+# ------------------------------
+# Deel 1: Sample en model inspectie
+# ------------------------------
 
 # Genereer een sequentie van 1200 waarnemingen en toestanden
 emissions, states = model.sample(1200)
@@ -37,7 +39,7 @@ print("States:", states[:30])
 print("Emissions:", emissions[:30])
 
 # ------------------------------
-# Part 2: Estimating Transition and Emission Probabilities
+# Deel 2: Schat overgangs- en emissieprobabiliteiten
 # ------------------------------
 
 # Schat overgangswaarschijnlijkheden
@@ -66,7 +68,7 @@ print("Geschatte emissiematrix:")
 print(estimated_emissionprob)
 
 # ------------------------------
-# Part 3: Plotting Histograms and Heatmaps
+# Deel 3: Visualisaties van histogrammen en heatmaps
 # ------------------------------
 
 # Plot histogrammen voor toestanden en emissies
@@ -124,12 +126,12 @@ plt.tight_layout()
 plt.show()
 
 # ------------------------------
-# Part 4: Log Probability Calculations
+# Deel 4: Log waarschijnlijkheden
 # ------------------------------
-
-# data
-X = [1, 2, 2, 3, 3]  # Waarnemingen (0: blauw, 1: geel, 2: groen, 3: rood)
-state_sequence = [1, 2, 0, 0, 2]  # Toestanden: tafels 2, 3, 1, 1, 3
+print("                                                 ")
+# Data voor scoreberekeningen
+X = [1, 2, 2, 3, 3]  # Waarnemingen
+state_sequence = [1, 2, 0, 0, 2]  # Toestanden
 
 # Bereken log-waarschijnlijkheid voor een specifieke toestandsreeks
 ln_prob_specific = model.score(X, state_sequence)
@@ -155,3 +157,59 @@ print(f"hmmlearn score (ln(p)): {hmm_ln_prob:.3f}")
 # Resultatenverificatie
 assert np.isclose(ln_prob_total, hmm_ln_prob, atol=1e-3), "Scores komen niet overeen!"
 print("Resultaten komen overeen met hmmlearn!")
+
+# ------------------------------
+# Deel 5: Voorspellingen en Vergelijkingen
+# ------------------------------
+
+# Testdata
+X = [1, 2, 0, 3, 2]  # Waarnemingen
+real_states = [1, 2, 0, 2, 1]  # Ware toestanden
+
+# Voorspelling met eigen model
+predicted_states = model.predict(X)
+print("                                                 ")
+print("============================= EIGEN MODULE =============================")
+print(f"Emissies         : {X}")
+print(f"Real states      : {real_states}")
+print(f"Predicted states : {predicted_states.tolist()}")
+
+# Bereken percentage correct
+accuracy = np.mean(np.array(real_states) == np.array(predicted_states)) * 100
+print(f"De overeenkomst tussen ware en voorspelde toestanden is {accuracy:.1f} %.")
+
+# Vergelijk log-waarschijnlijkheden
+ln_prob_real = model.score(X, real_states)
+ln_prob_predicted = model.score(X, predicted_states)
+print(f"Log-waarschijnlijkheid voor real states:      ln(p) = {ln_prob_real:.3f}")
+print(f"Log-waarschijnlijkheid voor predicted states: ln(p) = {ln_prob_predicted:.3f}")
+if ln_prob_predicted > ln_prob_real:
+    print("De voorspelde toestanden hebben een hogere waarschijnlijkheid dan de ware toestanden!")
+
+# Vergelijk met hmmlearn
+hmm_predicted_states = hmm_model.predict(np.array(X).reshape(-1, 1))
+print("=========================== HMMLEARN MODULE ============================")
+print(f"Emissies         : {X}")
+print(f"Real states      : {real_states}")
+print(f"Predicted states : {hmm_predicted_states.tolist()}")
+print("De voorspelling komt overeen!" if np.array_equal(predicted_states, hmm_predicted_states) else "De voorspelling komt NIET overeen!")
+
+# ------------------------------
+# Deel 6: Log-waarschijnlijkheden via forward-algoritme
+# ------------------------------
+
+# Log-waarschijnlijkheid via forward-algoritme
+log_prob_forward = model.score(X)
+print("                                                 ")
+print("============================= EIGEN MODULE =============================")
+print(f"Emissies : {X}")
+print(f"Log-waarschijnlijkheid via forward-algoritme: ln(p) = {log_prob_forward:.3f}")
+
+# Vergelijk met hmmlearn
+hmm_log_prob = hmm_model.score(np.array(X).reshape(-1, 1))
+print("=============================== HMMLEARN ===============================")
+print(f"Emissies : {X}")
+print(f"Log-waarschijnlijkheid: ln(p) = {hmm_log_prob:.3f}")
+
+# Vergelijk de resultaten
+print("De voorspelling komt overeen met de eigen module!" if np.isclose(log_prob_forward, hmm_log_prob, atol=1e-3) else "De voorspelling komt NIET overeen!")
