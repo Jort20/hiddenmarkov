@@ -117,8 +117,8 @@ class HiddenMarkovModel:
         n_emissions = len(X)
 
         # Initialisatie
-        viterbi = np.zeros((n_states, n_emissions))  # Opslag voor scores
-        backpointer = np.zeros((n_states, n_emissions), dtype=int)  # Opslag voor backtracking
+        viterbi = np.zeros((n_states, n_emissions))  
+        backpointer = np.zeros((n_states, n_emissions), dtype=int) 
 
         # Eerste stap: Initialisatie met begintoestandverdeling
         for s in range(n_states):
